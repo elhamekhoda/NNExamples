@@ -76,7 +76,7 @@ def mixture_density_loss(nb_components, target_dimension=1):
         # LogSumExp, for enhanced numerical stability
         x_star = K.max(expargs, axis=1, keepdims=True)
         logprob = - x_star - K.log(K.sum(norms * K.exp(expargs - x_star), axis=1))
-        
+
 
 
         return logprob
@@ -225,7 +225,7 @@ def main():
     # mixture should model it very well
     inputs = keras.layers.Input(shape=(1,))
     h = keras.layers.Dense(300, activation='relu')(inputs)
-    model = keras.models.Model(inputs=inputs, outputs=[mixture_density(5)(h)])
+    model = keras.models.Model(inputs=inputs, outputs=[mixture_density(2)(h)])
 
     # The gradients can get very large when the estimated precision
     # gets very large (small variance) which makes training
@@ -234,7 +234,7 @@ def main():
     # of the gradients
     model.compile(
         optimizer=keras.optimizers.Adam(lr=0.001),
-        loss=mixture_density_loss(nb_components=5),
+        loss=mixture_density_loss(nb_components=2),
     )
 
     plot_model(model, to_file='model.png')
@@ -264,11 +264,11 @@ def main():
     model = keras.models.load_model(
         'mdn_mod.h5',
         custom_objects={
-            'loss': mixture_density_loss(nb_components=5)
+            'loss': mixture_density_loss(nb_components=2)
         }
     )
 
-    nb_components = 5
+    nb_components = 2
 
     y_pred = model.predict(testX)
     y_smp = np.zeros(y_pred.shape[0])
@@ -279,7 +279,7 @@ def main():
         std = y_pred[i,2*nb_components:3*nb_components]
                # Sample a component of the mixture according to the priors
         #cpn = np.random.choice([0, 1, 2, 3,4,5,6,7,8,9], p=priors)
-        cpn = np.random.choice([0,1,2,3,4], p=priors)
+        cpn = np.random.choice([0,1], p=priors)
         # Sample a data point for the chosen mixture
         y_smp[i] = np.random.normal(loc=means[cpn], scale=1.0/np.sqrt(std[cpn]))
 
