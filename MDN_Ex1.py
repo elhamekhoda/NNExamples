@@ -36,7 +36,7 @@ def mixture_density_loss(nb_components, target_dimension=1):
     def loss(y_true, y_pred):
 
         batch_size = K.shape(y_pred)[0]
-
+        
         # Each row of y_pred is composed of (in order):
         # 'nb_components' prior probabilities
         # 'nb_components'*'target_dimension' means
@@ -70,7 +70,7 @@ def mixture_density_loss(nb_components, target_dimension=1):
         expargs = K.reshape(K.batch_dot(-0.5 * x * InvStdsq, x, axes=1), (batch_size, nb_components))
 
         # There is also one determinant per component per example
-        dets = K.reshape(K.abs(K.prod(std, axis=1)), (batch_size, nb_components))
+        dets = K.reshape(K.abs(K.prod(std*std, axis=1)), (batch_size, nb_components))
         norms = 1/K.sqrt(np.power(2*np.pi,target_dimension)*dets) * priors
 
         # LogSumExp, for enhanced numerical stability
@@ -99,12 +99,14 @@ def mixture_density_loss(nb_components, target_dimension=1):
                         K.exp(-(y_true - mu[:, c]) ** 2 / (2. * sigma[:, c] ** 2)))
         
         logprob = -K.log(pdf)
-        
-      '''
+        return logprob.mean()
+        '''
+      
     return loss
 
 
 '''
+
 ####################################################################################
 ## Loss function by L-G #########
 
@@ -277,11 +279,15 @@ def main():
         priors = y_pred[i,:nb_components]
         means = y_pred[i,nb_components:2*nb_components]
         std = y_pred[i,2*nb_components:3*nb_components]
-               # Sample a component of the mixture according to the priors
+
+        print(std)
+
+        # Sample a component of the mixture according to the priors
         #cpn = np.random.choice([0, 1, 2, 3,4,5,6,7,8,9], p=priors)
         cpn = np.random.choice([0,1], p=priors)
         # Sample a data point for the chosen mixture
-        y_smp[i] = np.random.normal(loc=means[cpn], scale=1.0/np.sqrt(std[cpn]))
+        y_smp[i] = np.random.normal(loc=means[cpn], scale=std[cpn])
+        #y_smp[i] = np.random.normal(loc=means[cpn], scale=1/np.sqrt(std[cpn]))
 
     plt.scatter(testX, testY,c='red', label='True data')
     plt.scatter(testX, y_smp, label='Generated data')
